@@ -6,4 +6,4 @@
 
 -Backend - it will be responsible for authentication of private frontend, and get live coordinates, save them in DB, and host public API of my current trip/history of my trips. It will be built with Django + DRF.
 
--Website (public frontend) frontend bulit around public data taken from backend API.
+-Website (public frontend) frontend bulit around public data taken from backend API. It will be built with React.
