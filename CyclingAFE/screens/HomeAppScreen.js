@@ -23,7 +23,7 @@ class HomeAppScreen extends React.Component {
            <BodyBold> You are logged in! Hurray! </BodyBold>
 
 
-           <BodyBold> Map: </BodyBold>
+           <BodyBold> Cycling: </BodyBold>
            <Button
              onPress={() => {
                this.props.navigation.navigate("Map");

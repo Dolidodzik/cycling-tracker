@@ -21,10 +21,20 @@ export default class MapComponent extends Component {
       this.state = {
          lat: null,
          lon: null,
+         start_timestamp: 0,
+         timer: 0,
       };
    }
 
-   componentDidMount = () => { this._getLocationAsync() }
+   componentDidMount() {
+      this._getLocationAsync()
+      this.interval = setInterval(() => this.setState({
+        timer: Math.round((Date.now() - this.state.start_timestamp) / 1000),
+      }), 1000);
+   }
+   componentWillUnmount() {
+      clearInterval(this.interval);
+   }
 
    metersToCoordinatesDistance = (meters) => {
      return meters * 0.000009;
@@ -69,6 +79,25 @@ export default class MapComponent extends Component {
                    }}
                  >
                 </MapView>
+
+                <BodyBold> { this.state.timer } </BodyBold>
+
+                <BodyBold> Start: </BodyBold>
+                <Button
+                  onPress={() => {
+                    if(this.state.start_timestamp==0)
+                      this.setState({ start_timestamp: new Date().getTime() })
+                  }}
+                  text="Start trip"
+                />
+
+                <BodyBold> Stop: </BodyBold>
+                <Button
+                  onPress={() => {
+                    this.setState({ start_timestamp: 0 })
+                  }}
+                  text="Stop trip"
+                />
 
               </View>
            </View>
