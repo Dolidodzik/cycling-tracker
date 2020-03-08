@@ -49,7 +49,7 @@ class LoginForm extends Component {
       .then((response) => response.json())
       .then((data) => {
          if(data.token){
-            this.setToStore("auth_token", data.token)
+            this.setToStore("cycling_app_auth_token", data.token)
             global.auth_token = data.token;
             this.props.navigation.navigate("HomeApp");
          }else{

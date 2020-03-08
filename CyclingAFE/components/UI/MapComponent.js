@@ -36,7 +36,6 @@ export default class MapComponent extends Component {
           lat: this.props.coords[0],
           lon: this.props.coords[1],
        })
-       this.requestSpots(this.props.coords[0], this.props.coords[1], 9999)
      }else{
        let { status } = await Permissions.askAsync(Permissions.LOCATION);
        if (status !== 'granted') {
@@ -49,7 +48,6 @@ export default class MapComponent extends Component {
           lat: location.coords.latitude,
           lon: location.coords.longitude,
        })
-       this.requestSpots(location.coords.latitude, location.coords.longitude, 9999)
      }
   };
 
