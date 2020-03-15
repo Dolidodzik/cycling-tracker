@@ -1,122 +1,299 @@
-import PropTypes from 'prop-types';
 import React from 'react';
-import { TextInput, StyleSheet, View, Text, ScrollView, FlatList, Slider, TouchableOpacity, Dimensions } from 'react-native';
-import { Component } from 'react';
-import { Button } from 'react-native-material-ui';
-import * as SecureStore from 'expo-secure-store'
-import Constants from 'expo-constants';
-import * as Location from 'expo-location';
+import { EventEmitter } from 'fbemitter';
+import { NavigationEvents } from 'react-navigation';
+import { AppState, AsyncStorage, Platform, StyleSheet, Text, View, Button } from 'react-native';
+import MapView from 'react-native-maps';
 import * as Permissions from 'expo-permissions';
-import StarRating from 'react-native-star-rating';
-import MapView, { Marker } from 'react-native-maps';
-import Fonts from '../../constants/fonts';
-import Colors from '../../constants/colors';
-import ApiConfig from '../../constants/api';
-import BodyBold from "./BodyBold";
+import * as Location from 'expo-location';
+import * as TaskManager from 'expo-task-manager';
+import { FontAwesome, MaterialIcons } from '@expo/vector-icons';
 
+const STORAGE_KEY = 'expo-home-locations';
+const LOCATION_UPDATES_TASK = 'location-updates';
 
-export default class MapComponent extends Component {
-   constructor(props) {
-      super(props);
-      this.state = {
-         lat: null,
-         lon: null,
-         start_timestamp: 0,
-         timer: 0,
-      };
-   }
+const locationEventsEmitter = new EventEmitter();
 
-   componentDidMount() {
-      this._getLocationAsync()
-      this.interval = setInterval(() => this.setState({
-        timer: Math.round((Date.now() - this.state.start_timestamp) / 1000),
-      }), 1000);
-   }
-   componentWillUnmount() {
-      clearInterval(this.interval);
-   }
-
-   metersToCoordinatesDistance = (meters) => {
-     return meters * 0.000009;
-   }
-
-  _getLocationAsync = async () => {
-     if(this.props.coords && this.props.coords[0] && this.props.coords[1]){
-       this.setState({
-          lat: this.props.coords[0],
-          lon: this.props.coords[1],
-       })
-     }else{
-       let { status } = await Permissions.askAsync(Permissions.LOCATION);
-       if (status !== 'granted') {
-          this.setState({
-             no_posts_to_display: true,
-          });
-       }
-       let location = await Location.getCurrentPositionAsync({});
-       this.setState({
-          lat: location.coords.latitude,
-          lon: location.coords.longitude,
-       })
-     }
+export default class MapComponent extends React.Component {
+  static navigationOptions = {
+    title: 'Background location',
   };
 
+  mapViewRef = React.createRef();
+
+  state = {
+    accuracy: 4,
+    isTracking: false,
+    showsBackgroundLocationIndicator: false,
+    savedLocations: [],
+    initialRegion: null,
+    error: null,
+  };
+
+  didFocus = async () => {
+    let { status } = await Permissions.askAsync(Permissions.LOCATION);
+
+    if (status !== 'granted') {
+      AppState.addEventListener('change', this.handleAppStateChange);
+      this.setState({
+        error:
+          'Location permissions are required in order to use this feature. You can manually enable them at any time in the "Location Services" section of the Settings app.',
+      });
+      return;
+    } else {
+      this.setState({ error: null });
+    }
+
+    const { coords } = await Location.getCurrentPositionAsync();
+    const isTracking = await Location.hasStartedLocationUpdatesAsync(LOCATION_UPDATES_TASK);
+    const task = (await TaskManager.getRegisteredTasksAsync()).find(
+      ({ taskName }) => taskName === LOCATION_UPDATES_TASK
+    );
+    const savedLocations = await getSavedLocations();
+    const accuracy = (task && task.options.accuracy) || this.state.accuracy;
+
+    this.eventSubscription = locationEventsEmitter.addListener('update', locations => {
+      this.setState({ savedLocations: locations });
+    });
+
+    if (!isTracking) {
+      alert('Click `Start tracking` to start getting location updates.');
+    }
+
+    this.setState({
+      accuracy,
+      isTracking,
+      savedLocations,
+      initialRegion: {
+        latitude: coords.latitude,
+        longitude: coords.longitude,
+        latitudeDelta: 0.004,
+        longitudeDelta: 0.002,
+      },
+    });
+  };
+
+  handleAppStateChange = nextAppState => {
+    if (nextAppState !== 'active') {
+      return;
+    }
+
+    if (this.state.initialRegion) {
+      AppState.removeEventListener('change', this.handleAppStateChange);
+      return;
+    }
+
+    this.didFocus();
+  };
+
+  componentWillUnmount() {
+    if (this.eventSubscription) {
+      this.eventSubscription.remove();
+    }
+
+    AppState.removeEventListener('change', this.handleAppStateChange);
+  }
+
+  async startLocationUpdates(accuracy = this.state.accuracy) {
+    await Location.startLocationUpdatesAsync(LOCATION_UPDATES_TASK, {
+      accuracy,
+      showsBackgroundLocationIndicator: this.state.showsBackgroundLocationIndicator,
+    });
+
+    if (!this.state.isTracking) {
+      alert(
+        'Now you can send app to the background, go somewhere and come back here! You can even terminate the app and it will be woken up when the new significant location change comes out.'
+      );
+    }
+    this.setState({ isTracking: true });
+  }
+
+  async stopLocationUpdates() {
+    await Location.stopLocationUpdatesAsync(LOCATION_UPDATES_TASK);
+    this.setState({ isTracking: false });
+  }
+
+  clearLocations = async () => {
+    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify([]));
+    this.setState({ savedLocations: [] });
+  };
+
+  toggleTracking = async () => {
+    await AsyncStorage.removeItem(STORAGE_KEY);
+
+    if (this.state.isTracking) {
+      await this.stopLocationUpdates();
+    } else {
+      await this.startLocationUpdates();
+    }
+    this.setState({ savedLocations: [] });
+  };
+
+  onAccuracyChange = () => {
+    const next = Location.Accuracy[this.state.accuracy + 1];
+    const accuracy = next ? Location.Accuracy[next] : Location.Accuracy.Lowest;
+
+    this.setState({ accuracy });
+
+    if (this.state.isTracking) {
+      // Restart background task with the new accuracy.
+      this.startLocationUpdates(accuracy);
+    }
+  };
+
+  toggleLocationIndicator = async () => {
+    const showsBackgroundLocationIndicator = !this.state.showsBackgroundLocationIndicator;
+
+    this.setState({ showsBackgroundLocationIndicator }, async () => {
+      if (this.state.isTracking) {
+        await this.startLocationUpdates();
+      }
+    });
+  };
+
+  onCenterMap = async () => {
+    const { coords } = await Location.getCurrentPositionAsync();
+    const mapView = this.mapViewRef.current;
+
+    if (mapView) {
+      mapView.animateToRegion({
+        latitude: coords.latitude,
+        longitude: coords.longitude,
+        latitudeDelta: 0.004,
+        longitudeDelta: 0.002,
+      });
+    }
+  };
+
+  renderPolyline() {
+    const { savedLocations } = this.state;
+
+    if (savedLocations.length === 0) {
+      return null;
+    }
+    return (
+      <MapView.Polyline
+        coordinates={savedLocations}
+        strokeWidth={3}
+        strokeColor={"black"}
+      />
+    );
+  }
+
   render() {
-     if(this.state.lat && this.state.lon){
-        return (
-           <View>
+    if (this.state.error) {
+      return <Text style={styles.errorText}>{this.state.error}</Text>;
+    }
 
-              <BodyBold> Map: </BodyBold>
+    if (!this.state.initialRegion) {
+      return <NavigationEvents onDidFocus={this.didFocus} />;
+    }
 
-              <View style={styles.container}>
-                 <MapView
-                   style={styles.mapStyle}
-                   initialRegion={{
-                      latitude: this.state.lat,
-                      longitude: this.state.lon,
-                      latitudeDelta: this.metersToCoordinatesDistance(100000),
-                      longitudeDelta: this.metersToCoordinatesDistance(100000),
-                   }}
-                 >
-                </MapView>
+    return (
+      <View style={styles.screen}>
+        <MapView
+          ref={this.mapViewRef}
+          style={styles.mapView}
+          initialRegion={this.state.initialRegion}
+          showsUserLocation>
+          {this.renderPolyline()}
+        </MapView>
+        <View style={styles.buttons} pointerEvents="box-none">
+          <View style={styles.topButtons}>
+            <View style={styles.buttonsColumn}>
+              {Platform.OS === 'android' ? null : (
+                <Button style={styles.button} onPress={this.toggleLocationIndicator} title="background/indicator">
+                  <Text>{this.state.showsBackgroundLocationIndicator ? 'Hide' : 'Show'}</Text>
+                  <Text> background </Text>
+                  <FontAwesome name="location-arrow" size={20} color="white" />
+                  <Text> indicator</Text>
+                </Button>
+              )}
+            </View>
+            <View style={styles.buttonsColumn}>
+              <Button style={styles.button} onPress={this.onCenterMap} title="my location">
+                <MaterialIcons name="my-location" size={20} color="white" />
+              </Button>
+            </View>
+          </View>
 
-                <BodyBold> { this.state.timer } </BodyBold>
-
-                <BodyBold> Start: </BodyBold>
-                <Button
-                  onPress={() => {
-                    if(this.state.start_timestamp==0)
-                      this.setState({ start_timestamp: new Date().getTime() })
-                  }}
-                  text="Start trip"
-                />
-
-                <BodyBold> Stop: </BodyBold>
-                <Button
-                  onPress={() => {
-                    this.setState({ start_timestamp: 0 })
-                  }}
-                  text="Stop trip"
-                />
-
-              </View>
-           </View>
-        );
-     }else{
-        return ( <Text> Loading </Text> )
-     }
+          <View style={styles.bottomButtons}>
+            <Button style={styles.button} onPress={this.clearLocations} title="clear locations">
+              Clear locations
+            </Button>
+            <Button style={styles.button} onPress={this.toggleTracking} title="start-stop tracking">
+              {this.state.isTracking ? 'Stop tracking' : 'Start tracking'}
+            </Button>
+          </View>
+        </View>
+      </View>
+    );
   }
 }
 
+async function getSavedLocations() {
+  try {
+    const item = await AsyncStorage.getItem(STORAGE_KEY);
+    return item ? JSON.parse(item) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+if (Platform.OS !== 'android') {
+  TaskManager.defineTask(LOCATION_UPDATES_TASK, async ({ data: { locations } }) => {
+    if (locations && locations.length > 0) {
+      const savedLocations = await getSavedLocations();
+      const newLocations = locations.map(({ coords }) => ({
+        latitude: coords.latitude,
+        longitude: coords.longitude,
+      }));
+
+      savedLocations.push(...newLocations);
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(savedLocations));
+
+      locationEventsEmitter.emit('update', savedLocations);
+    }
+  });
+}
+
 const styles = StyleSheet.create({
-   container: {
-     flex: 1,
-     backgroundColor: '#fff',
-     alignItems: 'center',
-     justifyContent: 'center',
-   },
-   mapStyle: {
-     width: Dimensions.get('window').width,
-     height: Dimensions.get('window').height * 0.75,
-   },
+  screen: {
+    flex: 1,
+  },
+  mapView: {
+    flex: 1,
+  },
+  buttons: {
+    flex: 1,
+    flexDirection: 'column',
+    justifyContent: 'space-between',
+    padding: 10,
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+  },
+  topButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  bottomButtons: {
+    flexDirection: 'column',
+    alignItems: 'flex-end',
+  },
+  buttonsColumn: {
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+  },
+  button: {
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    marginVertical: 5,
+  },
+  errorText: {
+    fontSize: 15,
+    color: 'rgba(0,0,0,0.7)',
+    margin: 20,
+  },
 });
