@@ -2907,10 +2907,10 @@ expo-sqlite@~7.0.0:
     "@types/websql" "^0.0.27"
     lodash "^4.17.15"
 
-expo-task-manager@^8.0.0:
-  version "8.0.0"
-  resolved "https://registry.yarnpkg.com/expo-task-manager/-/expo-task-manager-8.0.0.tgz#cf79e11fe2a48217f59896419aff401cdd776c28"
-  integrity sha512-gvb4cRzoZW7xpvX5z34gGhGTyr2LipLgqkbn+/hpyF1gKwySGiWjJOn20/VtjVXSCywTLCgxXbLbg+HzegCenQ==
+expo-task-manager@7.0.0:
+  version "7.0.0"
+  resolved "https://registry.yarnpkg.com/expo-task-manager/-/expo-task-manager-7.0.0.tgz#51dea794db2bfa195dc2fbb51b01d393a79049ae"
+  integrity sha512-BlftMltCFI9ygXDfeKPHNSTPleg+soOOjSoogEB4wdZB8ZzxvdEWdPPLvWbX6ci+04E+VWpjM10GqpFRfOip4w==
 
 expo-video-player@^1.5.7:
   version "1.5.7"

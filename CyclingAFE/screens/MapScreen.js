@@ -30,6 +30,7 @@ export default class MapScreen extends React.Component {
   };
 
   didFocus = async () => {
+    console.log("hello")
     let { status } = await Permissions.askAsync(Permissions.LOCATION);
 
     if (status !== 'granted') {
@@ -58,6 +59,8 @@ export default class MapScreen extends React.Component {
     if (!isTracking) {
       alert('Click `Start tracking` to start getting location updates.');
     }
+
+    console.log(coords)
 
     this.setState({
       accuracy,
@@ -128,18 +131,6 @@ export default class MapScreen extends React.Component {
     this.setState({ savedLocations: [] });
   };
 
-  onAccuracyChange = () => {
-    const next = Location.Accuracy[this.state.accuracy + 1];
-    const accuracy = next ? Location.Accuracy[next] : Location.Accuracy.Lowest;
-
-    this.setState({ accuracy });
-
-    if (this.state.isTracking) {
-      // Restart background task with the new accuracy.
-      this.startLocationUpdates(accuracy);
-    }
-  };
-
   toggleLocationIndicator = async () => {
     const showsBackgroundLocationIndicator = !this.state.showsBackgroundLocationIndicator;
 
@@ -166,9 +157,14 @@ export default class MapScreen extends React.Component {
 
   renderPolyline() {
     const { savedLocations } = this.state;
-
+    console.log(savedLocations)
     if (savedLocations.length === 0) {
       return null;
+    }else{
+      if(savedLocations.length % 10 === 0){
+        // server call
+        
+      }
     }
     return (
       <MapView.Polyline
@@ -239,7 +235,7 @@ async function getSavedLocations() {
   }
 }
 
-if (Platform.OS !== 'android') {
+if (true) {
   TaskManager.defineTask(LOCATION_UPDATES_TASK, async ({ data: { locations } }) => {
     if (locations && locations.length > 0) {
       const savedLocations = await getSavedLocations();
