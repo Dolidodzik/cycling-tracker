@@ -159,7 +159,6 @@ export default class MapScreen extends React.Component {
 
   renderPolyline() {
     const { savedLocations } = this.state;
-    console.log(savedLocations)
     if (savedLocations.length === 0) {
       return null;
     }else{
@@ -181,7 +180,6 @@ export default class MapScreen extends React.Component {
     if(this.state.start_timestamp===null)
       return "00:00:00";
     const seconds = this.state.current_timestamp - this.state.start_timestamp;
-    console.log(seconds)
     return new Date(seconds * 1000).toISOString().substr(11, 8)
   }
 
