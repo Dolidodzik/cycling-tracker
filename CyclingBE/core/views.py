@@ -19,6 +19,20 @@ class TripViewset(viewsets.ModelViewSet):
     queryset = Trip.objects.all()
     serializer_class = TripSerializer
 
+    def searchForActiveTrip(self, request):
+        trip = Trip.objects.filter(owner=request.user, is_finished=False)
+        if trip.exists():
+            return True
+        else:
+            return False
+
+    def retrieve(self, request, pk=None):
+        if self.searchForActiveTrip(request):
+            return Response(True)
+        else:
+            return Response(False)
+
+
 class PointInvitationViewset(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated, IsOwnerOrReadOnly]
     serializer_class = PointSerializer
