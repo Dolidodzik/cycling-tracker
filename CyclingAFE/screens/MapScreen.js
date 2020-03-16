@@ -27,10 +27,11 @@ export default class MapScreen extends React.Component {
     savedLocations: [],
     initialRegion: null,
     error: null,
+    start_timestamp: null,
+    current_timestamp: null,
   };
 
   didFocus = async () => {
-    console.log("hello")
     let { status } = await Permissions.askAsync(Permissions.LOCATION);
 
     if (status !== 'granted') {
@@ -60,8 +61,6 @@ export default class MapScreen extends React.Component {
       alert('Click `Start tracking` to start getting location updates.');
     }
 
-    console.log(coords)
-
     this.setState({
       accuracy,
       isTracking,
@@ -88,11 +87,13 @@ export default class MapScreen extends React.Component {
     this.didFocus();
   };
 
+  componentDidMount() {
+    this.interval = setInterval(() => this.setState({ current_timestamp: Date.parse(new Date())/1000 }), 1000);
+  }
   componentWillUnmount() {
     if (this.eventSubscription) {
       this.eventSubscription.remove();
     }
-
     AppState.removeEventListener('change', this.handleAppStateChange);
   }
 
@@ -127,6 +128,7 @@ export default class MapScreen extends React.Component {
       await this.stopLocationUpdates();
     } else {
       await this.startLocationUpdates();
+      this.setState({ start_timestamp: Date.parse(new Date())/1000 })
     }
     this.setState({ savedLocations: [] });
   };
@@ -163,7 +165,7 @@ export default class MapScreen extends React.Component {
     }else{
       if(savedLocations.length % 10 === 0){
         // server call
-        
+
       }
     }
     return (
@@ -173,6 +175,14 @@ export default class MapScreen extends React.Component {
         strokeColor={"black"}
       />
     );
+  }
+
+  timer = () => {
+    if(this.state.start_timestamp===null)
+      return "00:00:00";
+    const seconds = this.state.current_timestamp - this.state.start_timestamp;
+    console.log(seconds)
+    return new Date(seconds * 1000).toISOString().substr(11, 8)
   }
 
   render() {
@@ -216,7 +226,7 @@ export default class MapScreen extends React.Component {
             <Button style={styles.button} onPress={this.clearLocations} title="clear locations">
               Clear locations
             </Button>
-            <Button style={styles.button} onPress={this.toggleTracking} title="start-stop tracking">
+            <Button style={styles.button} onPress={this.toggleTracking} title={"start-stop tracking, is-tracking: "+this.state.isTracking+" timer: "+this.timer()}>
               {this.state.isTracking ? 'Stop tracking' : 'Start tracking'}
             </Button>
           </View>
@@ -242,6 +252,7 @@ if (true) {
       const newLocations = locations.map(({ coords }) => ({
         latitude: coords.latitude,
         longitude: coords.longitude,
+        timestamp: Date.parse(new Date()),
       }));
 
       savedLocations.push(...newLocations);
