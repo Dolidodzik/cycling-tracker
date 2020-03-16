@@ -13,7 +13,7 @@ class TripSerializer(serializers.ModelSerializer):
         model = Trip
         fields = ('id', 'owner', 'created_date', 'modified_date', 'is_finished')
 
-class UserSerializer(serializers.ModelSerializer):
+class PointSerializer(serializers.ModelSerializer):
     class Meta:
-        model = User
+        model = Point
         fields = ('id', 'trip', 'lon', 'lat', 'created_date', 'modified_date')
