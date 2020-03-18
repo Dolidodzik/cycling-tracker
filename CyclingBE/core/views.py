@@ -76,18 +76,27 @@ class PointViewset(mixins.RetrieveModelMixin, mixins.ListModelMixin, mixins.Crea
 Example input value
 [
     {
-        "latitude": 2.0048170349561962,
-        "longitude": -134.5184974689895,
-        "timestamp": 1584559628000
+        "lat": 2.0048170349561962,
+        "lon": -134.5184974689895,
+        "timestamp": 1584559628000,
+        "trip": 5
     },
     {
-        "latitude":49.682981826485005,
-        "longitude":-160.74046945502633,
-        "timestamp":1584559636000
+        "lat":49.682981826485005,
+        "lon":-160.74046945502633,
+        "timestamp":1584559636000,
+        "trip": 5
     }
 ]
 '''
 @api_view(['POST'])
 def receivePoints(request):
-    print(request.data)
+    try:
+        for point in request.data:
+            print(point)
+            print(point["trip"])
+            trip = Trip.objects.filter(pk=point["trip"]).first()
+            Point.objects.create(trip=trip, lon=point["lon"], lat=point["lat"], timestamp=point["timestamp"])
+    except:
+        print("Received the same spot before, ignoring")
     return Response("POST_RESPONSE")

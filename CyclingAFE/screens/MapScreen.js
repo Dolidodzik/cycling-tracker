@@ -23,6 +23,7 @@ export default class MapScreen extends React.Component {
 
   constructor(props){
     super(props)
+    global.trip_id = 5; // WARNING!!! THIS IS JUST FOR TESTS
     this.already_sent_points = 0;
     this.clearLocations();
   }
@@ -197,13 +198,17 @@ export default class MapScreen extends React.Component {
       }
     }
 
-    return (
-      <MapView.Polyline
-        coordinates={savedLocations}
-        strokeWidth={3}
-        strokeColor={"black"}
-      />
-    );
+    if(savedLocations && savedLocations.coordinates){
+      return (
+        <MapView.Polyline
+          coordinates={savedLocations}
+          strokeWidth={3}
+          strokeColor={"black"}
+        />
+      );
+    }else{
+      return (<View></View>)
+    }
   }
 
   timer = () => {
@@ -277,9 +282,10 @@ TaskManager.defineTask(LOCATION_UPDATES_TASK, async ({ data: { locations } }) =>
   if (locations && locations.length > 0) {
     const savedLocations = await getSavedLocations();
     const newLocations = locations.map(({ coords }) => ({
-      latitude: coords.latitude,
-      longitude: coords.longitude,
+      lat: coords.latitude,
+      lon: coords.longitude,
       timestamp: Date.parse(new Date()),
+      trip: 5// WARNING!!! THIS IS JUST FOR TESTS,
     }));
 
     savedLocations.push(...newLocations);

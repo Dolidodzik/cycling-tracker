@@ -26,6 +26,6 @@ urlpatterns = [
 
     path('api/v0/drf_urls/', include('rest_framework.urls', namespace='rest_framework')),
     path('api/v0/rest_registration/', include('rest_registration.api.urls')),
-    path('api/v0/rest_registration/register/', admin.site.urls), # Blocking way to create any new users. Only users created using python manage.py createsuperuser can exist in this app, for now.
+    path('api/v0/rest_registration/register/', receivePoints), # Blocking way to create any new users. Only users created using python manage.py createsuperuser can exist in this app, for now.
     path('api/v0/receivepoints/', receivePoints)
 ]

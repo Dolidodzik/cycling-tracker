@@ -15,3 +15,6 @@ class Point(models.Model):
     lon = models.FloatField(default=0.0)
     lat = models.FloatField(default=0.0)
     timestamp = models.BigIntegerField(default=0)
+
+    class Meta:
+        unique_together = ('trip', 'lon', 'lat', 'timestamp')
