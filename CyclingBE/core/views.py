@@ -29,11 +29,16 @@ class TripViewset(viewsets.ModelViewSet):
             return False
 
     def retrieve(self, request, pk=None):
-        trip = self.searchForActiveTrip(request)
-        if trip:
-            return Response(self.get_serializer(trip).data)
+        search_for_currently_active_trip = request.query_params.get('search_for_currently_active_trip')
+        if search_for_currently_active_trip:
+            trip = self.searchForActiveTrip(request)
+            if trip:
+                return Response(self.get_serializer(trip).data)
+            else:
+                return Response("NO_ACTIVE_TRIP")
         else:
-            return Response(False)
+            trip = self.get_object()
+            return Response(self.get_serializer(trip).data)
 
     def create(self, request, *args, **kwargs):
         if self.searchForActiveTrip(request):
@@ -48,9 +53,17 @@ class TripViewset(viewsets.ModelViewSet):
         return Response(self.get_serializer(instance).data)
 
 
-
-
 class PointInvitationViewset(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated, IsOwnerOrReadOnly]
     serializer_class = PointSerializer
     queryset = Point.objects.all()
+
+    def list(self, request, *args, **kwargs):
+        trip_id = request.query_params.get('trip')
+        trip = Trip.objects.filter(pk=trip_id)
+        if trip_id and trip.exists():
+            trip = trip.first()
+            points = Point.objects.filter(trip=trip)
+            return Response(self.get_serializer(points, many=True).data)
+        else:
+            return Response("INCORRECT_OR_NONEXISTENT_TRIP_ID_PROVIDED")

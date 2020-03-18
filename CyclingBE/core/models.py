@@ -8,7 +8,7 @@ class Trip(models.Model):
     is_finished = models.BooleanField(default=False)
 
     def __str__(self):
-        return str(self.user.created_date)
+        return str(self.created_date)
 
 class Point(models.Model):
     trip = models.ForeignKey(Trip, on_delete=models.CASCADE)
