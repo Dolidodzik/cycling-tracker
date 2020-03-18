@@ -7,6 +7,7 @@ import * as Permissions from 'expo-permissions';
 import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager';
 import { FontAwesome, MaterialIcons } from '@expo/vector-icons';
+import ApiConfig from '../constants/api';
 
 const STORAGE_KEY = 'expo-home-locations';
 const LOCATION_UPDATES_TASK = 'location-updates';
@@ -19,6 +20,12 @@ export default class MapScreen extends React.Component {
   };
 
   mapViewRef = React.createRef();
+
+  constructor(props){
+    super(props)
+    this.already_sent_points = 0;
+    this.clearLocations();
+  }
 
   state = {
     accuracy: 4,
@@ -131,6 +138,7 @@ export default class MapScreen extends React.Component {
       this.setState({ start_timestamp: Date.parse(new Date())/1000 })
     }
     this.setState({ savedLocations: [] });
+    this.clearLocations();
   };
 
   toggleLocationIndicator = async () => {
@@ -158,15 +166,37 @@ export default class MapScreen extends React.Component {
   };
 
   renderPolyline() {
-    const { savedLocations } = this.state;
-    if (savedLocations.length === 0) {
-      return null;
-    }else{
-      if(savedLocations.length % 10 === 0){
-        // server call
+    let { savedLocations } = this.state;
+    const frequency_of_sending = 3;
 
+    console.log("already sent number"+this.already_sent_points)
+
+    if(savedLocations.length % frequency_of_sending == 0){
+      // cutting saved locations to not send the same more than 1 time
+      if(savedLocations.length && this.already_sent_points){
+        savedLocations = savedLocations.slice(Math.max(savedLocations.length - this.already_sent_points, 0))
+      }
+
+      if(savedLocations.length){
+        const locations_json_string = JSON.stringify(savedLocations);
+        this.already_sent_points = this.already_sent_points + frequency_of_sending
+        fetch(ApiConfig.url + '/api/v0/receivepoints/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Token ' + global.auth_token,
+          },
+          body: locations_json_string,
+        })
+        .then((response) => response.json())
+        .then((data) => {
+          console.log(data)
+        }).catch((error) => {
+          console.error('Error:', error);
+        });
       }
     }
+
     return (
       <MapView.Polyline
         coordinates={savedLocations}
@@ -243,23 +273,21 @@ async function getSavedLocations() {
   }
 }
 
-if (true) {
-  TaskManager.defineTask(LOCATION_UPDATES_TASK, async ({ data: { locations } }) => {
-    if (locations && locations.length > 0) {
-      const savedLocations = await getSavedLocations();
-      const newLocations = locations.map(({ coords }) => ({
-        latitude: coords.latitude,
-        longitude: coords.longitude,
-        timestamp: Date.parse(new Date()),
-      }));
+TaskManager.defineTask(LOCATION_UPDATES_TASK, async ({ data: { locations } }) => {
+  if (locations && locations.length > 0) {
+    const savedLocations = await getSavedLocations();
+    const newLocations = locations.map(({ coords }) => ({
+      latitude: coords.latitude,
+      longitude: coords.longitude,
+      timestamp: Date.parse(new Date()),
+    }));
 
-      savedLocations.push(...newLocations);
-      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(savedLocations));
+    savedLocations.push(...newLocations);
+    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(savedLocations));
 
-      locationEventsEmitter.emit('update', savedLocations);
-    }
-  });
-}
+    locationEventsEmitter.emit('update', savedLocations);
+  }
+});
 
 const styles = StyleSheet.create({
   screen: {

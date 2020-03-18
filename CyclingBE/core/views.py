@@ -6,6 +6,7 @@ from rest_framework import permissions
 from rest_framework.response import Response
 from django.core import serializers
 from core.permissions import *
+from rest_framework.decorators import api_view, action
 
 # Create your views here.
 class UserIdViewSet(viewsets.ModelViewSet):
@@ -54,7 +55,7 @@ class TripViewset(mixins.RetrieveModelMixin, mixins.ListModelMixin, mixins.Destr
 
 
 # Viewset that excludes updateModelMixin, and destroyModelMixin
-class PointInvitationViewset(mixins.RetrieveModelMixin, mixins.ListModelMixin, mixins.CreateModelMixin, viewsets.GenericViewSet):
+class PointViewset(mixins.RetrieveModelMixin, mixins.ListModelMixin, mixins.CreateModelMixin, viewsets.GenericViewSet):
     permission_classes = [permissions.IsAuthenticated, IsOwnerOrReadOnly]
     serializer_class = PointSerializer
     queryset = Point.objects.all()
@@ -68,3 +69,25 @@ class PointInvitationViewset(mixins.RetrieveModelMixin, mixins.ListModelMixin, m
             return Response(self.get_serializer(points, many=True).data)
         else:
             return Response("INCORRECT_OR_NONEXISTENT_TRIP_ID_PROVIDED")
+
+
+# View responsible for receiving live data from AFE
+'''
+Example input value
+[
+    {
+        "latitude": 2.0048170349561962,
+        "longitude": -134.5184974689895,
+        "timestamp": 1584559628000
+    },
+    {
+        "latitude":49.682981826485005,
+        "longitude":-160.74046945502633,
+        "timestamp":1584559636000
+    }
+]
+'''
+@api_view(['POST'])
+def receivePoints(request):
+    print(request.data)
+    return Response("POST_RESPONSE")

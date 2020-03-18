@@ -14,5 +14,4 @@ class Point(models.Model):
     trip = models.ForeignKey(Trip, on_delete=models.CASCADE)
     lon = models.FloatField(default=0.0)
     lat = models.FloatField(default=0.0)
-    modified_date = models.DateTimeField(auto_now=True, blank=True, null=True)
-    created_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    timestamp = models.BigIntegerField(default=0)
