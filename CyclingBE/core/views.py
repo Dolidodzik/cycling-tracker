@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from rest_framework import viewsets
+from rest_framework import viewsets, mixins
 from django.contrib.auth.models import User
 from core.serializers import *
 from rest_framework import permissions
@@ -15,8 +15,8 @@ class UserIdViewSet(viewsets.ModelViewSet):
         return User.objects.filter(pk=self.request.user.id)
 
 
-
-class TripViewset(viewsets.ModelViewSet):
+# Viewset that excludes updateModelMixin
+class TripViewset(mixins.RetrieveModelMixin, mixins.ListModelMixin, mixins.DestroyModelMixin, mixins.CreateModelMixin, viewsets.GenericViewSet):
     permission_classes = [permissions.IsAuthenticated, IsOwnerOrReadOnly]
     queryset = Trip.objects.all()
     serializer_class = TripSerializer
@@ -53,7 +53,8 @@ class TripViewset(viewsets.ModelViewSet):
         return Response(self.get_serializer(instance).data)
 
 
-class PointInvitationViewset(viewsets.ModelViewSet):
+# Viewset that excludes updateModelMixin, and destroyModelMixin
+class PointInvitationViewset(mixins.RetrieveModelMixin, mixins.ListModelMixin, mixins.CreateModelMixin, viewsets.GenericViewSet):
     permission_classes = [permissions.IsAuthenticated, IsOwnerOrReadOnly]
     serializer_class = PointSerializer
     queryset = Point.objects.all()
