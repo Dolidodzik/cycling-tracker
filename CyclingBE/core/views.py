@@ -14,6 +14,8 @@ class UserIdViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return User.objects.filter(pk=self.request.user.id)
 
+
+
 class TripViewset(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated, IsOwnerOrReadOnly]
     queryset = Trip.objects.all()
@@ -22,15 +24,22 @@ class TripViewset(viewsets.ModelViewSet):
     def searchForActiveTrip(self, request):
         trip = Trip.objects.filter(owner=request.user, is_finished=False)
         if trip.exists():
-            return True
+            return trip.first()
         else:
             return False
 
     def retrieve(self, request, pk=None):
-        if self.searchForActiveTrip(request):
-            return Response(True)
+        trip = self.searchForActiveTrip(request)
+        if trip:
+            return Response(self.get_serializer(trip).data)
         else:
             return Response(False)
+
+    def create(self, request):
+        if self.searchForActiveTrip(request):
+            return Response("some_trip_is_already_active")
+        else:
+            return super().create(request, *args, **kwargs)
 
 
 class PointInvitationViewset(viewsets.ModelViewSet):
