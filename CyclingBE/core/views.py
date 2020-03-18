@@ -35,11 +35,19 @@ class TripViewset(viewsets.ModelViewSet):
         else:
             return Response(False)
 
-    def create(self, request):
+    def create(self, request, *args, **kwargs):
         if self.searchForActiveTrip(request):
             return Response("some_trip_is_already_active")
         else:
             return super().create(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.is_finished = True
+        instance.save()
+        return Response(self.get_serializer(instance).data)
+
+
 
 
 class PointInvitationViewset(viewsets.ModelViewSet):
