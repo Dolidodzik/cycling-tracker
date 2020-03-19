@@ -26,7 +26,7 @@ class TripViewset(mixins.RetrieveModelMixin, mixins.ListModelMixin, mixins.Destr
     def searchForActiveTrip(self, request):
         trip = Trip.objects.filter(owner=request.user, is_finished=False).first()
         if trip:
-            trip = trip.calculate_general_trip_stats()
+            trip = trip.calculateGeneralTripStats()
             return trip
         else:
             return False
@@ -36,6 +36,7 @@ class TripViewset(mixins.RetrieveModelMixin, mixins.ListModelMixin, mixins.Destr
         if search_for_currently_active_trip:
             trip = self.searchForActiveTrip(request)
             if trip:
+                trip.createOneIn60SecondsPoints()
                 return Response(self.get_serializer(trip).data)
             else:
                 return Response("NO_ACTIVE_TRIP")
@@ -75,6 +76,21 @@ class PointViewset(mixins.RetrieveModelMixin, mixins.ListModelMixin, mixins.Crea
         else:
             return Response("INCORRECT_OR_NONEXISTENT_TRIP_ID_PROVIDED")
 
+class Point60Viewset(mixins.RetrieveModelMixin, mixins.ListModelMixin, viewsets.GenericViewSet):
+    permission_classes = [permissions.IsAuthenticated, IsOwnerOrReadOnly]
+    serializer_class = Point60Serializer
+    queryset = Point60.objects.all()
+
+    def list(self, request, *args, **kwargs):
+        trip_id = request.query_params.get('trip')
+        trip = Trip.objects.filter(pk=trip_id)
+        if trip_id and trip.exists():
+            trip = trip.first()
+            points = Point60.objects.filter(trip=trip)
+            return Response(self.get_serializer(points, many=True).data)
+        else:
+            return Response("INCORRECT_OR_NONEXISTENT_TRIP_ID_PROVIDED")
+
 
 # View responsible for receiving live data from AFE
 '''
@@ -100,11 +116,9 @@ Example input value
 def receivePoints(request):
     try:
         for point in request.data:
-            print(point)
-            print(point["trip"])
             trip = Trip.objects.filter(pk=point["trip"], is_finished=False).first()
             if trip:
-                Point.objects.create(trip=trip, lon=point["lon"], lat=point["lat"], timestamp=point["timestamp"])
+                Point.objects.create(trip=trip, lon=point["longitude"], lat=point["latitude"], timestamp=point["timestamp"], was_paused=point["was_paused"])
             else:
                 return Response("GIVEN_TRIP_ID_IS_INACTIVE")
     except:

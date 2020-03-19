@@ -213,7 +213,7 @@ export default class MapScreen extends React.Component {
     this.setState({ state: this.state });
   }
 
-  renderPolyline() {
+  request = async () => {
     let { savedLocations } = this.state;
     const frequency_of_sending = 3;
 
@@ -243,18 +243,24 @@ export default class MapScreen extends React.Component {
         });
       }
     }
+  }
 
-    if(savedLocations && savedLocations.coordinates){
-      return (
-        <MapView.Polyline
-          coordinates={savedLocations}
-          strokeWidth={3}
-          strokeColor={"black"}
-        />
-      );
-    }else{
-      return (<View></View>)
+  renderPolyline() {
+    // sending points data to BE
+    this.request()
+
+    // Standard polyline render
+    let { savedLocations } = this.state;
+    if (savedLocations.length === 0) {
+      return null;
     }
+    return (
+      <MapView.Polyline
+        coordinates={savedLocations}
+        strokeWidth={3}
+        strokeColor={"black"}
+      />
+    );
   }
 
   render() {
@@ -324,8 +330,8 @@ TaskManager.defineTask(LOCATION_UPDATES_TASK, async ({ data: { locations } }) =>
   if (locations && locations.length > 0) {
     const savedLocations = await getSavedLocations();
     const newLocations = locations.map(({ coords }) => ({
-      lat: coords.latitude,
-      lon: coords.longitude,
+      latitude: coords.latitude,
+      longitude: coords.longitude,
       timestamp: Date.parse(new Date()),
       trip: global.trip_id,
       was_paused: global.is_paused,

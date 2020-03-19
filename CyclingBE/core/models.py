@@ -2,7 +2,8 @@ from django.contrib.auth.models import User
 from django.db import models
 from django.core.cache import cache
 import mpu
-
+import math
+from django.db.models import Q
 
 
 class Trip(models.Model):
@@ -19,7 +20,7 @@ class Trip(models.Model):
     last_pos_lat = models.FloatField(default=0.0) # in latitude
     last_pos_lon = models.FloatField(default=0.0) # in longitude
 
-    def calculate_general_trip_stats(self):
+    def calculateGeneralTripStats(self):
         not_calculate = cache.get('currently_active_trip_stats')
         #if not self.is_finished and not not_calculate:
         if True:
@@ -51,16 +52,41 @@ class Trip(models.Model):
 
         return self
 
+    def createOneIn60SecondsPoints(self):
+        print("executing")
+        points = Point.objects.filter(trip=self, was_paused=False)
+        self.calculateGeneralTripStats()
+        if points.exists():
+            start_timestamp = points.first().timestamp
+            end_timestamp = points.last().timestamp
+            print("start ", start_timestamp)
+            print("stopp ", end_timestamp)
+            diff = (end_timestamp - start_timestamp) / 1000
+            loop_ticks = math.floor(diff/60)
+            for x in range(loop_ticks):
+                print("Tick: ",x+1)
+
+                point = Point.objects.all().filter(timestamp__gte=start_timestamp+60*x, timestamp__lte=start_timestamp+60*x+60)
+                print(point)
+                #Point.objects.create(trip=point.trip, lon=point.lon, lat=point.lat, timestamp=point.timestamp)
 
     def __str__(self):
         return str(self.created_date)
 
-class Point(models.Model):
+class PointAbstract(models.Model):
     trip = models.ForeignKey(Trip, on_delete=models.CASCADE)
     lon = models.FloatField(default=0.0)
     lat = models.FloatField(default=0.0)
     timestamp = models.BigIntegerField(default=0)
     was_paused = models.BooleanField(default=False)# was trip paused at moment of recording this point?
-
     class Meta:
         unique_together = ('trip', 'lon', 'lat', 'timestamp')
+        abstract = True
+
+# Standard Point, represents position recorded at AFE. Typical frquency is 1 point, few seconds, 1 point etc.
+class Point(PointAbstract):
+    pass
+
+# OneIn60Seconds point, the same as Point model, less accurate but also less resource (cpu/ram/internet connection) demanding. Instances of Point60 are created on trip end
+class Point60(PointAbstract):
+    pass

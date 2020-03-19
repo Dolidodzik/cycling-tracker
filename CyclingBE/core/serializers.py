@@ -18,3 +18,8 @@ class PointSerializer(serializers.ModelSerializer):
     class Meta:
         model = Point
         fields = ('id', 'trip', 'lon', 'lat', 'timestamp', 'was_paused')
+
+class Point60Serializer(serializers.ModelSerializer):
+    class Meta:
+        model = Point60
+        fields = ('id', 'trip', 'lon', 'lat', 'timestamp', 'was_paused')

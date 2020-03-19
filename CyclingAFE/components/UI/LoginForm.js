@@ -52,7 +52,7 @@ class LoginForm extends Component {
          if(data.token){
             this.setToStore("cycling_app_auth_token", data.token)
             global.auth_token = data.token;
-            this.props.navigation.navigate("Home");
+            this.checkToken();
          }else{
             this.setState({ areCredentialsIncorrect: true })
          }
@@ -61,6 +61,29 @@ class LoginForm extends Component {
         console.error('Error:', error);
       });
 
+   }
+
+   checkToken = async () => {
+      const token = await SecureStore.getItemAsync("cycling_app_auth_token")
+      if(token){
+        await fetch(ApiConfig.url + '/api/v0/core/user_id/', {
+          headers: {
+            'Authorization': 'Token ' + token,
+            'Content-Type': 'application/json',
+          }
+        })
+        .then((response) => response.json())
+        .then((data) => {
+           if (data[0] && data[0].id){
+              global.id = data[0].id;
+              global.auth_token = token;
+              this.props.navigation.navigate("HomeApp");
+           }
+        })
+        .catch((error) => {
+          console.error('Error:', error);
+        });
+      }
    }
 
    errorMessage() {
