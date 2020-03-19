@@ -23,7 +23,6 @@ export default class MapScreen extends React.Component {
 
   constructor(props){
     super(props)
-    global.trip_id = 5; // WARNING!!! THIS IS JUST FOR TESTS
     this.already_sent_points = 0;
     this.clearLocations();
   }
@@ -142,15 +141,32 @@ export default class MapScreen extends React.Component {
     })
     .then((response) => response.json())
     .then((data) => {
-      console.log(data)
     }).catch((error) => {
-      console.error('Error:', error);
+      //console.error('Error:', error);
     });
 
 
     if (this.state.isTracking) {
       await this.stopLocationUpdates();
       this.setState({ start_timestamp: null })
+
+      // sending whole previously saved locations
+      let { savedLocations } = this.state;
+      if(savedLocations.length){
+        const locations_json_string = JSON.stringify(savedLocations);
+        fetch(ApiConfig.url + '/api/v0/receivepoints/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Token ' + global.auth_token,
+          },
+          body: locations_json_string,
+        })
+        .then((response) => response.json())
+        .then((data) => {
+        })
+      }
+
     } else {
       await this.startLocationUpdates();
       this.setState({ start_timestamp: Date.parse(new Date())/1000 })
@@ -167,9 +183,7 @@ export default class MapScreen extends React.Component {
       .then((response) => response.json())
       .then((data) => {
         global.trip_id = data.id;
-      }).catch((error) => {
-        console.error('Error:', error);
-      });
+      })
     }
 
     this.setState({ savedLocations: [] });
@@ -213,7 +227,7 @@ export default class MapScreen extends React.Component {
     this.setState({ state: this.state });
   }
 
-  request = async () => {
+  request = async (ignore_send_before=false) => {
     try {
       let { savedLocations } = this.state;
       const frequency_of_sending = 3;
@@ -226,8 +240,6 @@ export default class MapScreen extends React.Component {
 
         if(savedLocations.length){
           const locations_json_string = JSON.stringify(savedLocations);
-          console.log(locations_json_string)
-          this.already_sent_points = this.already_sent_points + frequency_of_sending
           fetch(ApiConfig.url + '/api/v0/receivepoints/', {
             method: 'POST',
             headers: {
@@ -238,6 +250,9 @@ export default class MapScreen extends React.Component {
           })
           .then((response) => response.json())
           .then((data) => {
+            if(data == "POST_RESPONSE"){
+              this.already_sent_points = this.already_sent_points + frequency_of_sending
+            }
           })
         }
       }

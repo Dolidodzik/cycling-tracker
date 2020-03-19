@@ -26,7 +26,9 @@ class Trip(models.Model):
         not_calculate = cache.get('currently_active_trip_stats')
         #if not self.is_finished and not not_calculate:
         if True:
+            print("calculating trip stats")
             points = Point.objects.filter(trip=self, was_paused=False)
+
             record_speed = 0
             if points.exists():
                 # Calculating distance

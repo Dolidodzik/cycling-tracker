@@ -118,6 +118,7 @@ def receivePoints(request):
         for point in request.data:
             trip = Trip.objects.filter(pk=point["trip"], is_finished=False).first()
             if trip:
+                print("creatin")
                 Point.objects.create(trip=trip, lon=point["longitude"], lat=point["latitude"], timestamp=point["timestamp"], was_paused=point["was_paused"])
             else:
                 return Response("GIVEN_TRIP_ID_IS_INACTIVE")
