@@ -214,34 +214,35 @@ export default class MapScreen extends React.Component {
   }
 
   request = async () => {
-    let { savedLocations } = this.state;
-    const frequency_of_sending = 3;
+    try {
+      let { savedLocations } = this.state;
+      const frequency_of_sending = 3;
 
-    if(savedLocations.length % frequency_of_sending == 0){
-      // cutting saved locations to not send the same more than 1 time
-      if(savedLocations.length && this.already_sent_points){
-        savedLocations = savedLocations.slice(Math.max(this.already_sent_points, 0))
-      }
+      if(savedLocations.length % frequency_of_sending == 0){
+        // cutting saved locations to not send the same more than 1 time
+        if(savedLocations.length && this.already_sent_points){
+          savedLocations = savedLocations.slice(Math.max(this.already_sent_points, 0))
+        }
 
-      if(savedLocations.length){
-        const locations_json_string = JSON.stringify(savedLocations);
-        console.log(locations_json_string)
-        this.already_sent_points = this.already_sent_points + frequency_of_sending
-        fetch(ApiConfig.url + '/api/v0/receivepoints/', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Token ' + global.auth_token,
-          },
-          body: locations_json_string,
-        })
-        .then((response) => response.json())
-        .then((data) => {
-          console.log(data)
-        }).catch((error) => {
-          console.error('Error:', error);
-        });
+        if(savedLocations.length){
+          const locations_json_string = JSON.stringify(savedLocations);
+          console.log(locations_json_string)
+          this.already_sent_points = this.already_sent_points + frequency_of_sending
+          fetch(ApiConfig.url + '/api/v0/receivepoints/', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Token ' + global.auth_token,
+            },
+            body: locations_json_string,
+          })
+          .then((response) => response.json())
+          .then((data) => {
+          })
+        }
       }
+    } catch(error) {
+      console.log("ERROR!!!")
     }
   }
 

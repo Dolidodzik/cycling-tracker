@@ -19,6 +19,7 @@ class Trip(models.Model):
     max_speed = models.FloatField(default=0) # in km/h
     last_pos_lat = models.FloatField(default=0.0) # in latitude
     last_pos_lon = models.FloatField(default=0.0) # in longitude
+    number_of_points = models.IntegerField(default=0) # number of points that were unpaused
 
     def calculateGeneralTripStats(self):
         not_calculate = cache.get('currently_active_trip_stats')
@@ -41,9 +42,12 @@ class Trip(models.Model):
                 # Calculating avg_speed - dirty but short solution
                 self.avg_speed = round(distance/(self.time/3600)/1000, 3)
 
-                # saving last position
+                # Saving last position
                 self.last_pos_lat = points.last().lat
                 self.last_pos_lon = points.last().lon
+
+                # Calculating number of spots
+                self.number_of_points = points.count()
 
                 # Max speed will be aviable only after finishing trip
 
