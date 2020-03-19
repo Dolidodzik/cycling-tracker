@@ -11,8 +11,8 @@ class UserSerializer(serializers.ModelSerializer):
 class TripSerializer(serializers.ModelSerializer):
     class Meta:
         model = Trip
-        fields = ('id', 'owner', 'created_date', 'modified_date', 'is_finished', 'distance', 'time', 'avg_speed', 'max_speed')
-        read_only_fields = ('created_date', 'modified_date', 'is_finished', 'distance', 'time', 'avg_speed', 'max_speed')
+        fields = ('id', 'owner', 'created_date', 'modified_date', 'is_finished', 'distance', 'time', 'avg_speed', 'max_speed', 'last_pos_lat', 'last_pos_lon')
+        read_only_fields = ('created_date', 'modified_date', 'is_finished', 'distance', 'time', 'avg_speed', 'max_speed', 'last_pos_lat', 'last_pos_lon')
 
 class PointSerializer(serializers.ModelSerializer):
     class Meta:

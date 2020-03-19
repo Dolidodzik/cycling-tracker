@@ -36,7 +36,6 @@ class TripViewset(mixins.RetrieveModelMixin, mixins.ListModelMixin, mixins.Destr
         if search_for_currently_active_trip:
             trip = self.searchForActiveTrip(request)
             if trip:
-                trip = trip.calculate_general_trip_stats()
                 return Response(self.get_serializer(trip).data)
             else:
                 return Response("NO_ACTIVE_TRIP")
@@ -85,13 +84,15 @@ Example input value
         "lat": 2.0048170349561962,
         "lon": -134.5184974689895,
         "timestamp": 1584559628000,
-        "trip": 5
+        "trip": 5,
+        "was_paused": false
     },
     {
         "lat":49.682981826485005,
         "lon":-160.74046945502633,
         "timestamp":1584559636000,
-        "trip": 5
+        "trip": 5,
+        "was_paused": false
     }
 ]
 '''
