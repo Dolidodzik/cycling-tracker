@@ -101,8 +101,11 @@ def receivePoints(request):
         for point in request.data:
             print(point)
             print(point["trip"])
-            trip = Trip.objects.filter(pk=point["trip"]).first()
-            Point.objects.create(trip=trip, lon=point["lon"], lat=point["lat"], timestamp=point["timestamp"])
+            trip = Trip.objects.filter(pk=point["trip"], is_finished=False).first()
+            if trip:
+                Point.objects.create(trip=trip, lon=point["lon"], lat=point["lat"], timestamp=point["timestamp"])
+            else:
+                return Response("GIVEN_TRIP_ID_IS_INACTIVE")
     except:
         print("Received the same spot before, ignoring")
     return Response("POST_RESPONSE")

@@ -154,6 +154,7 @@ export default class MapScreen extends React.Component {
     } else {
       await this.startLocationUpdates();
       this.setState({ start_timestamp: Date.parse(new Date())/1000 })
+      global.is_paused = false;
 
       fetch(ApiConfig.url + '/api/v0/core/trips/', {
         method: 'POST',
@@ -165,7 +166,7 @@ export default class MapScreen extends React.Component {
       })
       .then((response) => response.json())
       .then((data) => {
-        console.log(data)
+        global.trip_id = data.id;
       }).catch((error) => {
         console.error('Error:', error);
       });
@@ -199,6 +200,18 @@ export default class MapScreen extends React.Component {
       });
     }
   };
+
+  timer = () => {
+    if(this.state.start_timestamp==null)
+      return "00:00:00";
+    const seconds = this.state.current_timestamp - this.state.start_timestamp;
+    return new Date(seconds * 1000).toISOString().substr(11, 8)
+  }
+
+  pause = () => {
+    global.is_paused = !global.is_paused
+    this.setState({ state: this.state });
+  }
 
   renderPolyline() {
     let { savedLocations } = this.state;
@@ -244,13 +257,6 @@ export default class MapScreen extends React.Component {
     }
   }
 
-  timer = () => {
-    if(this.state.start_timestamp==null)
-      return "00:00:00";
-    const seconds = this.state.current_timestamp - this.state.start_timestamp;
-    return new Date(seconds * 1000).toISOString().substr(11, 8)
-  }
-
   render() {
     if (this.state.error) {
       return <Text style={styles.errorText}>{this.state.error}</Text>;
@@ -292,6 +298,9 @@ export default class MapScreen extends React.Component {
             <Button style={styles.button} onPress={this.clearLocations} title="clear locations">
               Clear locations
             </Button>
+            <Button style={styles.button} onPress={this.pause} title={"Pause: "+global.is_paused}>
+              Pause
+            </Button>
             <Button style={styles.button} onPress={this.toggleTracking} title={"start-stop tracking, is-tracking: "+this.state.isTracking+" timer: "+this.timer()}>
               {this.state.isTracking ? 'Stop tracking' : 'Start tracking'}
             </Button>
@@ -318,7 +327,8 @@ TaskManager.defineTask(LOCATION_UPDATES_TASK, async ({ data: { locations } }) =>
       lat: coords.latitude,
       lon: coords.longitude,
       timestamp: Date.parse(new Date()),
-      trip: 5// WARNING!!! THIS IS JUST FOR TESTS,
+      trip: global.trip_id,
+      was_paused: global.is_paused,
     }));
 
     savedLocations.push(...newLocations);
