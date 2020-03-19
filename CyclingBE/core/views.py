@@ -8,6 +8,7 @@ from django.core import serializers
 from core.permissions import *
 from rest_framework.decorators import api_view, action
 
+
 # Create your views here.
 class UserIdViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
@@ -23,9 +24,10 @@ class TripViewset(mixins.RetrieveModelMixin, mixins.ListModelMixin, mixins.Destr
     serializer_class = TripSerializer
 
     def searchForActiveTrip(self, request):
-        trip = Trip.objects.filter(owner=request.user, is_finished=False)
-        if trip.exists():
-            return trip.first()
+        trip = Trip.objects.filter(owner=request.user, is_finished=False).first()
+        trip = trip.calculate_general_trip_stats()
+        if trip:
+            return trip
         else:
             return False
 
@@ -34,6 +36,7 @@ class TripViewset(mixins.RetrieveModelMixin, mixins.ListModelMixin, mixins.Destr
         if search_for_currently_active_trip:
             trip = self.searchForActiveTrip(request)
             if trip:
+                trip = trip.calculate_general_trip_stats()
                 return Response(self.get_serializer(trip).data)
             else:
                 return Response("NO_ACTIVE_TRIP")

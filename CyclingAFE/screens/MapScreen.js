@@ -175,11 +175,12 @@ export default class MapScreen extends React.Component {
     if(savedLocations.length % frequency_of_sending == 0){
       // cutting saved locations to not send the same more than 1 time
       if(savedLocations.length && this.already_sent_points){
-        savedLocations = savedLocations.slice(Math.max(savedLocations.length - this.already_sent_points, 0))
+        savedLocations = savedLocations.slice(Math.max(this.already_sent_points, 0))
       }
 
       if(savedLocations.length){
         const locations_json_string = JSON.stringify(savedLocations);
+        console.log(locations_json_string)
         this.already_sent_points = this.already_sent_points + frequency_of_sending
         fetch(ApiConfig.url + '/api/v0/receivepoints/', {
           method: 'POST',
