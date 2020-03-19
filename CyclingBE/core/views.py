@@ -36,7 +36,6 @@ class TripViewset(mixins.RetrieveModelMixin, mixins.ListModelMixin, mixins.Destr
         if search_for_currently_active_trip:
             trip = self.searchForActiveTrip(request)
             if trip:
-                trip.createOneIn60SecondsPoints()
                 return Response(self.get_serializer(trip).data)
             else:
                 return Response("NO_ACTIVE_TRIP")
@@ -55,6 +54,7 @@ class TripViewset(mixins.RetrieveModelMixin, mixins.ListModelMixin, mixins.Destr
         if instance:
             instance.is_finished = True
             instance.save()
+            instance.createOneIn60SecondsPoints()
             return Response(self.get_serializer(instance).data)
         else:
             return Response("NO_TRIP_WAS_ACTIVE_ANYWAY")

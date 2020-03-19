@@ -4,6 +4,7 @@ from django.core.cache import cache
 import mpu
 import math
 from django.db.models import Q
+from datetime import datetime
 
 
 class Trip(models.Model):
@@ -26,6 +27,7 @@ class Trip(models.Model):
         #if not self.is_finished and not not_calculate:
         if True:
             points = Point.objects.filter(trip=self, was_paused=False)
+            record_speed = 0
             if points.exists():
                 # Calculating distance
                 distance = 0
@@ -49,30 +51,21 @@ class Trip(models.Model):
                 # Calculating number of spots
                 self.number_of_points = points.count()
 
-                # Max speed will be aviable only after finishing trip
-
                 cache.set('currently_active_trip_stats', True, 180) # Don't calculate new stats more often than once in 3 minutes (and beacuse of that last parameter should be 180 (60 seconds * 3 minutes = 180))
                 self.save()
-
         return self
 
     def createOneIn60SecondsPoints(self):
-        print("executing")
         points = Point.objects.filter(trip=self, was_paused=False)
-        self.calculateGeneralTripStats()
         if points.exists():
             start_timestamp = points.first().timestamp
             end_timestamp = points.last().timestamp
-            print("start ", start_timestamp)
-            print("stopp ", end_timestamp)
             diff = (end_timestamp - start_timestamp) / 1000
             loop_ticks = math.floor(diff/60)
             for x in range(loop_ticks):
-                print("Tick: ",x+1)
-
-                point = Point.objects.all().filter(timestamp__gte=start_timestamp+60*x, timestamp__lte=start_timestamp+60*x+60)
-                print(point)
-                #Point.objects.create(trip=point.trip, lon=point.lon, lat=point.lat, timestamp=point.timestamp)
+                point = Point.objects.all().filter(timestamp__gte=start_timestamp+60000*x, timestamp__lte=start_timestamp+60000*x+60000).first()
+                if point:
+                    Point60.objects.create(trip=point.trip, lon=point.lon, lat=point.lat, timestamp=point.timestamp)
 
     def __str__(self):
         return str(self.created_date)
