@@ -39,6 +39,7 @@ class LoginForm extends Component {
    }
 
    handleSubmit = async () => {
+
       fetch(ApiConfig.url + '/api/v0/token_auth/', {
         method: 'POST',
         headers: {
@@ -51,7 +52,7 @@ class LoginForm extends Component {
          if(data.token){
             this.setToStore("cycling_app_auth_token", data.token)
             global.auth_token = data.token;
-            this.props.navigation.navigate("HomeApp");
+            this.props.navigation.navigate("Home");
          }else{
             this.setState({ areCredentialsIncorrect: true })
          }

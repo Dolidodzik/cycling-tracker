@@ -25,8 +25,8 @@ class TripViewset(mixins.RetrieveModelMixin, mixins.ListModelMixin, mixins.Destr
 
     def searchForActiveTrip(self, request):
         trip = Trip.objects.filter(owner=request.user, is_finished=False).first()
-        trip = trip.calculate_general_trip_stats()
         if trip:
+            trip = trip.calculate_general_trip_stats()
             return trip
         else:
             return False
@@ -51,10 +51,13 @@ class TripViewset(mixins.RetrieveModelMixin, mixins.ListModelMixin, mixins.Destr
             return super().create(request, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs):
-        instance = self.get_object()
-        instance.is_finished = True
-        instance.save()
-        return Response(self.get_serializer(instance).data)
+        instance = self.searchForActiveTrip(request)
+        if instance:
+            instance.is_finished = True
+            instance.save()
+            return Response(self.get_serializer(instance).data)
+        else:
+            return Response("NO_TRIP_WAS_ACTIVE_ANYWAY")
 
 
 # Viewset that excludes updateModelMixin, and destroyModelMixin

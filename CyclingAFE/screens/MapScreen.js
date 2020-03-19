@@ -132,14 +132,48 @@ export default class MapScreen extends React.Component {
   toggleTracking = async () => {
     await AsyncStorage.removeItem(STORAGE_KEY);
 
+    // Clear trip if some somehow is in progress now
+    fetch(ApiConfig.url + '/api/v0/core/trips/0/', {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Token ' + global.auth_token,
+      },
+    })
+    .then((response) => response.json())
+    .then((data) => {
+      console.log(data)
+    }).catch((error) => {
+      console.error('Error:', error);
+    });
+
+
     if (this.state.isTracking) {
       await this.stopLocationUpdates();
+      this.setState({ start_timestamp: null })
     } else {
       await this.startLocationUpdates();
       this.setState({ start_timestamp: Date.parse(new Date())/1000 })
+
+      fetch(ApiConfig.url + '/api/v0/core/trips/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Token ' + global.auth_token,
+        },
+        body: JSON.stringify({"owner": global.id})
+      })
+      .then((response) => response.json())
+      .then((data) => {
+        console.log(data)
+      }).catch((error) => {
+        console.error('Error:', error);
+      });
     }
+
     this.setState({ savedLocations: [] });
     this.clearLocations();
+
   };
 
   toggleLocationIndicator = async () => {
@@ -169,8 +203,6 @@ export default class MapScreen extends React.Component {
   renderPolyline() {
     let { savedLocations } = this.state;
     const frequency_of_sending = 3;
-
-    console.log("already sent number"+this.already_sent_points)
 
     if(savedLocations.length % frequency_of_sending == 0){
       // cutting saved locations to not send the same more than 1 time
@@ -213,7 +245,7 @@ export default class MapScreen extends React.Component {
   }
 
   timer = () => {
-    if(this.state.start_timestamp===null)
+    if(this.state.start_timestamp==null)
       return "00:00:00";
     const seconds = this.state.current_timestamp - this.state.start_timestamp;
     return new Date(seconds * 1000).toISOString().substr(11, 8)

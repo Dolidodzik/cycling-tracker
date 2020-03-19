@@ -12,6 +12,7 @@ class TripSerializer(serializers.ModelSerializer):
     class Meta:
         model = Trip
         fields = ('id', 'owner', 'created_date', 'modified_date', 'is_finished', 'distance', 'time', 'avg_speed', 'max_speed')
+        read_only_fields = ('created_date', 'modified_date', 'is_finished', 'distance', 'time', 'avg_speed', 'max_speed')
 
 class PointSerializer(serializers.ModelSerializer):
     class Meta:

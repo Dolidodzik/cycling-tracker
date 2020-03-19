@@ -22,26 +22,26 @@ class Trip(models.Model):
         #if not self.is_finished and not not_calculate:
         if True:
             points = Point.objects.filter(trip=self, was_paused=False)
+            if points.exists():
+                # Calculating distance
+                distance = 0
+                prev_point = None
+                for point in points:
+                    if prev_point:
+                        distance += mpu.haversine_distance((prev_point.lat, prev_point.lon), (point.lat, point.lon))
+                    prev_point = point
+                self.distance = round(distance*1000) # in meters
 
-            # Calculating distance
-            distance = 0
-            prev_point = None
-            for point in points:
-                if prev_point:
-                    distance += mpu.haversine_distance((prev_point.lat, prev_point.lon), (point.lat, point.lon))
-                prev_point = point
-            self.distance = round(distance*1000) # in meters
+                # Calculating time
+                self.time = (points.last().timestamp - points.first().timestamp)/1000 #/1000 to get seconds
 
-            # Calculating time
-            self.time = (points.last().timestamp - points.first().timestamp)/1000 #/1000 to get seconds
+                # Calculating avg_speed - dirty but short solution
+                self.avg_speed = round(distance/(self.time/3600)/1000, 3)
 
-            # Calculating avg_speed - dirty but short solution
-            self.avg_speed = round(distance/(self.time/3600)/1000, 3)
+                # Max speed will be aviable only after finishing trip
 
-            # Max speed will be aviable only after finishing trip
-
-            cache.set('currently_active_trip_stats', True, 180) # Don't calculate new stats more often than once in 3 minutes (and beacuse of that last parameter should be 180 (60 seconds * 3 minutes = 180))
-            self.save()
+                cache.set('currently_active_trip_stats', True, 180) # Don't calculate new stats more often than once in 3 minutes (and beacuse of that last parameter should be 180 (60 seconds * 3 minutes = 180))
+                self.save()
 
         return self
 
