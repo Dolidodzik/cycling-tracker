@@ -19,12 +19,12 @@ class UserIdViewSet(viewsets.ModelViewSet):
 
 # Viewset that excludes updateModelMixin
 class TripViewset(mixins.RetrieveModelMixin, mixins.ListModelMixin, mixins.DestroyModelMixin, mixins.CreateModelMixin, viewsets.GenericViewSet):
-    permission_classes = [permissions.IsAuthenticated, IsOwnerOrReadOnly]
+    permission_classes = [IsOwnerOrReadOnly]
     queryset = Trip.objects.all()
     serializer_class = TripSerializer
 
     def searchForActiveTrip(self, request):
-        trip = Trip.objects.filter(owner=request.user, is_finished=False).first()
+        trip = Trip.objects.filter(is_finished=False).first()
         if trip:
             trip = trip.calculateGeneralTripStats()
             return trip
@@ -62,22 +62,25 @@ class TripViewset(mixins.RetrieveModelMixin, mixins.ListModelMixin, mixins.Destr
 
 # Viewset that excludes updateModelMixin, and destroyModelMixin
 class PointViewset(mixins.RetrieveModelMixin, mixins.ListModelMixin, mixins.CreateModelMixin, viewsets.GenericViewSet):
-    permission_classes = [permissions.IsAuthenticated, IsOwnerOrReadOnly]
+    permission_classes = [IsOwnerOrReadOnly]
     serializer_class = PointSerializer
     queryset = Point.objects.all()
 
     def list(self, request, *args, **kwargs):
         trip_id = request.query_params.get('trip')
+        last_point_timestamp = request.query_params.get('last_point_timestamp')
+        if not last_point_timestamp:
+            last_point_timestamp = 0
         trip = Trip.objects.filter(pk=trip_id)
         if trip_id and trip.exists():
             trip = trip.first()
-            points = Point.objects.filter(trip=trip)
+            points = Point.objects.filter(trip=trip, timestamp__gte=last_point_timestamp)
             return Response(self.get_serializer(points, many=True).data)
         else:
             return Response("INCORRECT_OR_NONEXISTENT_TRIP_ID_PROVIDED")
 
 class Point60Viewset(mixins.RetrieveModelMixin, mixins.ListModelMixin, viewsets.GenericViewSet):
-    permission_classes = [permissions.IsAuthenticated, IsOwnerOrReadOnly]
+    permission_classes = [IsOwnerOrReadOnly]
     serializer_class = Point60Serializer
     queryset = Point60.objects.all()
 

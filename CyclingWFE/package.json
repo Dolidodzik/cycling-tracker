@@ -6,9 +6,16 @@
     "@testing-library/jest-dom": "^4.2.4",
     "@testing-library/react": "^9.3.2",
     "@testing-library/user-event": "^7.1.2",
+    "google-map-react": "^1.1.7",
+    "leaflet": "^1.6.0",
+    "pigeon-maps": "^0.15.0",
+    "pigeon-marker": "^0.3.4",
     "react": "^16.13.0",
     "react-dom": "^16.13.0",
-    "react-scripts": "3.4.0"
+    "react-leaflet": "^2.6.3",
+    "react-map-gl": "^5.2.3",
+    "react-scripts": "3.4.0",
+    "schema-utils": "^2.6.5"
   },
   "scripts": {
     "start": "react-scripts start",

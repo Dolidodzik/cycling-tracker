@@ -44,11 +44,11 @@ class Trip(models.Model):
                 self.time = (points.last().timestamp - points.first().timestamp)/1000 #/1000 to get seconds
 
                 # Calculating avg_speed - dirty but short solution
-                self.avg_speed = round(distance/(self.time/3600)/1000, 3)
+                self.avg_speed = round(distance/(self.time/3600), 3)
 
                 # Saving last position
-                self.last_pos_lat = points.last().lat
-                self.last_pos_lon = points.last().lon
+                self.last_pos_lat = points.first().lat
+                self.last_pos_lon = points.first().lon
 
                 # Calculating number of spots
                 self.number_of_points = points.count()

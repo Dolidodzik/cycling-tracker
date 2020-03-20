@@ -23,7 +23,7 @@ class TripSerializer(serializers.ModelSerializer):
     last_10_positions = serializers.SerializerMethodField('last10Positions')
 
     def last10Positions(self, instance):
-        last_10_positions = Point.objects.filter(trip=instance).order_by('timestamp')[:-10]
+        last_10_positions = Point.objects.filter(trip=instance).order_by('timestamp')[:10]
         return PointSerializer(last_10_positions, many=True).data
 
     class Meta:

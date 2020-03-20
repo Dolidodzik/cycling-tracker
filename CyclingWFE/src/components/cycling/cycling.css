@@ -1,0 +1,10 @@
+.component-cycling{
+  padding: 40px;
+  font-size: 30px;
+  text-align: center;
+}
+.leaflet-container {
+  height: 65vh;
+  width: 70vw;
+  margin-left: 12vw;
+}

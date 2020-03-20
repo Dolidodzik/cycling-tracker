@@ -28,7 +28,7 @@ export default class MapScreen extends React.Component {
   }
 
   state = {
-    accuracy: 4,
+    accuracy: 5,
     isTracking: false,
     showsBackgroundLocationIndicator: false,
     savedLocations: [],
@@ -227,10 +227,11 @@ export default class MapScreen extends React.Component {
     this.setState({ state: this.state });
   }
 
-  request = async (ignore_send_before=false) => {
+  request = async () => {
+    console.log("requesting")
     try {
       let { savedLocations } = this.state;
-      const frequency_of_sending = 3;
+      const frequency_of_sending = 5;
 
       if(savedLocations.length % frequency_of_sending == 0){
         // cutting saved locations to not send the same more than 1 time
@@ -250,6 +251,7 @@ export default class MapScreen extends React.Component {
           })
           .then((response) => response.json())
           .then((data) => {
+            console.log("requested")
             if(data == "POST_RESPONSE"){
               this.already_sent_points = this.already_sent_points + frequency_of_sending
             }
@@ -322,6 +324,9 @@ export default class MapScreen extends React.Component {
             </Button>
             <Button style={styles.button} onPress={this.pause} title={"Pause: "+global.is_paused}>
               Pause
+            </Button>
+            <Button style={styles.button} onPress={this.request} title="Request manually">
+              Request manually
             </Button>
             <Button style={styles.button} onPress={this.toggleTracking} title={"start-stop tracking, is-tracking: "+this.state.isTracking+" timer: "+this.timer()}>
               {this.state.isTracking ? 'Stop tracking' : 'Start tracking'}
