@@ -1,4 +1,4 @@
-# my-cycle-tracker
+# cycling-tracker
 
 ### This project will be bulit from following subprojects:
 
